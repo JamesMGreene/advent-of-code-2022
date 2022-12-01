@@ -19,6 +19,7 @@ const sectionReader = await getInputSectionStream()
 
 // Assess each group of numbers
 for await (const lines of sectionReader) {
+  // ⚠️ If there are a lot of lines, this could get slow as we already read them once creating the SectionReader
   const currentSum = sumLines(lines)
   maybeUpdateHighestValue(currentSum)
 }
