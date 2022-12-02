@@ -60,17 +60,8 @@ for await (const [oppChoice, outcomeChoice] of cellsReader) {
   const oppShape = SHAPES[oppChoice]
   const outcome = OUTCOMES[outcomeChoice]
 
-  let myShape = ''
-
   // Draw? Lose? Win?
-  if (outcome === 'draw' || outcome === 'lose' || outcome === 'win') {
-    myShape = determineShapeForOutcome(oppShape, outcome)
-  }
-  // WTF?
-  else {
-    throw new Error('Invalid outcome! ' + oppChoice + ' ' + outcomeChoice)
-  }
-
+  const myShape = determineShapeForOutcome(oppShape, outcome)
   myScore += calculateRoundScore(myShape, outcome)
 }
 
