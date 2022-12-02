@@ -32,7 +32,6 @@ export async function getInputCellStream(relativePath?: string): Promise<Readabl
   const lineReader = await getInputLineStream(relativePath)
   return lineReader!
     .pipeThrough(new TransformStream({
-      // ⚠️ This transformation has potential performance issues as it buffers "cells" into memory for each line
       transform: (line:string, controller) => {
         const trimmedLine = line.trim()
         if (trimmedLine !== '') {
