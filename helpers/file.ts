@@ -28,12 +28,28 @@ export async function getInputLineStream(relativePath?: string): Promise<Readabl
     .pipeThrough(new TextLineStream()) // transform into a stream where each chunk is divided by a newline
 }
 
+export async function getInputCellStream(relativePath?: string): Promise<ReadableStream<string[]>> {
+  const lineReader = await getInputLineStream(relativePath)
+  return lineReader!
+    .pipeThrough(new TransformStream({
+      // ⚠️ This transformation has potential performance issues as it buffers "cells" into memory for each line
+      transform: (line:string, controller) => {
+        const trimmedLine = line.trim()
+        if (trimmedLine !== '') {
+          const cells = trimmedLine.split(/\s+/)
+          controller.enqueue(cells)
+        }
+      }
+    }))
+}
+
 export async function getInputSectionStream(relativePath?: string): Promise<ReadableStream<string[]>> {
   const inputStream = await getInputStream(relativePath)
   return inputStream!
     .pipeThrough(new DelimiterStream(new TextEncoder().encode('\n\n'))) // transform into a stream where each chunk is divided by two newlines
     .pipeThrough(new TextDecoderStream()) // convert Uint8Array to string
     .pipeThrough(new TransformStream({
+      // ⚠️ This transformation has potential performance issues as it buffers lines into memory for each section
       transform: (section:string, controller) => {
         const lines = section.split('\n')
         controller.enqueue(lines)
