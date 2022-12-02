@@ -32,14 +32,6 @@ const OUTCOME_VALUES:IMap<number> = {
 
 // Prepare the processing functions
 
-function doesFirstShapeWin(firstShape:string, secondShape:string) {
-  return (
-    (firstShape === 'rock' && secondShape === 'scissors') ||
-    (firstShape === 'paper' && secondShape === 'rock') ||
-    (firstShape === 'scissors' && secondShape === 'paper')
-  )
-}
-
 function determineShapeForOutcome(firstShape:string, outcome:string) {
   if (outcome === 'win') {
     if (firstShape === 'rock') return 'paper'
