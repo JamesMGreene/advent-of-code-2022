@@ -34,6 +34,7 @@ export async function getInputCellStream(relativePath?: string): Promise<Readabl
     .pipeThrough(new TransformStream({
       transform: (line:string, controller) => {
         const trimmedLine = line.trim()
+        // Omit empty lines
         if (trimmedLine !== '') {
           const cells = trimmedLine.split(/\s+/)
           controller.enqueue(cells)
