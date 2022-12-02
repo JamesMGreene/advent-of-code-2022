@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-read
 
-import { getInputCellStream } from '../../helpers/file.ts'
+import { getInputRowStream } from '../../helpers/file.ts'
 
 interface IMap<T> {
   [index: string]: T;
@@ -53,10 +53,10 @@ function calculateRoundScore(shape:string, outcome:string) {
 let myScore = 0
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const cellsReader = await getInputCellStream()
+const rowReader = await getInputRowStream()
 
 // Assess each group of numbers
-for await (const [oppChoice, outcomeChoice] of cellsReader) {
+for await (const [oppChoice, outcomeChoice] of rowReader) {
   const oppShape = SHAPES[oppChoice]
   const outcome = OUTCOMES[outcomeChoice]
 

@@ -28,15 +28,15 @@ export async function getInputLineStream(relativePath?: string): Promise<Readabl
     .pipeThrough(new TextLineStream()) // transform into a stream where each chunk is divided by a newline
 }
 
-export async function getInputCellStream(relativePath?: string): Promise<ReadableStream<string[]>> {
+export async function getInputRowStream(relativePath?: string): Promise<ReadableStream<string[]>> {
   const lineReader = await getInputLineStream(relativePath)
   return lineReader!
     .pipeThrough(new TransformStream({
-      transform: (line:string, controller) => {
-        const trimmedLine = line.trim()
-        // Omit empty lines
-        if (trimmedLine !== '') {
-          const cells = trimmedLine.split(/\s+/)
+      transform: (row:string, controller) => {
+        const trimmedRow = row.trim()
+        // Omit empty rows
+        if (trimmedRow !== '') {
+          const cells = trimmedRow.split(/\s+/)
           controller.enqueue(cells)
         }
       }
