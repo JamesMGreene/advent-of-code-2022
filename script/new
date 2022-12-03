@@ -14,7 +14,7 @@ NEW_DIR="day${FORMATTED_DAY}"
 
 # Stop immediately if the directory already exists
 if [[ -d "${NEW_DIR}" ]]; then
-  echo "ERROR: Directory ${NEW_DIR} already exists!" >&2
+  echo "ERROR: Directory '${NEW_DIR}' already exists!" >&2
   exit 1
 fi
 
