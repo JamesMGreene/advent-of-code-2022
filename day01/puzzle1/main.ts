@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read
 
 import { getInputSectionStream } from '../../helpers/file.ts'
-import { sumLines } from '../../helpers/array.ts'
+import { _ } from '../../helpers/lodash.ts'
 import { getInputFileName } from '../../helpers/args.ts'
 
 // Prepare the processing functions
@@ -21,7 +21,7 @@ const sectionReader = await getInputSectionStream('../' + getInputFileName())
 // Assess each group of numbers
 for await (const lines of sectionReader) {
   // ⚠️ If there are a lot of lines, this could get slow as we already read them once creating the SectionReader
-  const currentSum = sumLines(lines)
+  const currentSum = _.sumBy(lines, Number)
   maybeUpdateHighestValue(currentSum)
 }
 
