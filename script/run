@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# New exercises are released every day at midnight EST.
+TODAY=$(TZ=America/New_York date +%d)
+
+# Collect arguments to pass along to the run script
+ARGS=("$@")
+
+# May include leading zeroes; e.g. 01, 25
+PADDED_DAY=$TODAY
+# Strip any leading zeroes; e.g. 00 -> 0, 0001 -> 1, 25 -> 25
+[[ "$PADDED_DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
+
+DIR="day${PADDED_DAY}"
+
+# Stop immediately if the directory does not exist
+if [[ ! -d "${DIR}" ]]; then
+  echo "ERROR: Directory '${DIR}' does not exist!" >&2
+  exit 1
+fi
+if [[ ! -f "${DIR}/main.ts" ]]; then
+  echo "ERROR: File '${DIR}/main.ts' does not exist!" >&2
+  exit 1
+fi
+
+# Run today's exercise
+deno run --allow-read "${DIR}/main.ts" ${ARGS[@]}
