@@ -2,8 +2,6 @@ import * as path from 'https://deno.land/std/path/mod.ts'
 import { TextLineStream } from 'https://deno.land/std/streams/text_line_stream.ts'
 import { DelimiterStream } from 'https://deno.land/std/streams/delimiter_stream.ts'
 
-const DEFAULT_INPUT_FILE_PATH = '../input.txt'
-
 export async function readRelativeFile(relativePath:string): Promise<ReadableStream<Uint8Array>> {
   // Figure out the file path relative to the main executing script file
   const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
@@ -17,18 +15,18 @@ export async function readRelativeFile(relativePath:string): Promise<ReadableStr
   return inputFile.readable
 }
 
-export function getInputStream(relativePath = DEFAULT_INPUT_FILE_PATH): Promise<ReadableStream<Uint8Array>> {
+export function getInputStream(relativePath:string): Promise<ReadableStream<Uint8Array>> {
   return readRelativeFile(relativePath)
 }
 
-export async function getInputLineStream(relativePath?:string): Promise<ReadableStream<string>> {
+export async function getInputLineStream(relativePath:string): Promise<ReadableStream<string>> {
   const inputReader = await getInputStream(relativePath)
   return inputReader!
     .pipeThrough(new TextDecoderStream()) // convert Uint8Array to string
     .pipeThrough(new TextLineStream()) // transform into a stream where each chunk is divided by a newline
 }
 
-export async function getInputRowStream(relativePath?:string, splitDelimiter:string|RegExp = /\s+/): Promise<ReadableStream<string[]>> {
+export async function getInputRowStream(relativePath:string, splitDelimiter:string|RegExp = /\s+/): Promise<ReadableStream<string[]>> {
   const lineReader = await getInputLineStream(relativePath)
   return lineReader!
     .pipeThrough(new TransformStream({
@@ -43,7 +41,7 @@ export async function getInputRowStream(relativePath?:string, splitDelimiter:str
     }))
 }
 
-export async function getInputSectionStream(relativePath?:string): Promise<ReadableStream<string[]>> {
+export async function getInputSectionStream(relativePath:string): Promise<ReadableStream<string[]>> {
   const inputStream = await getInputStream(relativePath)
   return inputStream!
     .pipeThrough(new DelimiterStream(new TextEncoder().encode('\n\n'))) // transform into a stream where each chunk is divided by two newlines
