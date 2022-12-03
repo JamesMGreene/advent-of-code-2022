@@ -21,14 +21,14 @@ export function getInputStream(relativePath = DEFAULT_INPUT_FILE_PATH): Promise<
   return readRelativeFile(relativePath)
 }
 
-export async function getInputLineStream(relativePath?: string): Promise<ReadableStream<string>> {
+export async function getInputLineStream(relativePath?:string): Promise<ReadableStream<string>> {
   const inputReader = await getInputStream(relativePath)
   return inputReader!
     .pipeThrough(new TextDecoderStream()) // convert Uint8Array to string
     .pipeThrough(new TextLineStream()) // transform into a stream where each chunk is divided by a newline
 }
 
-export async function getInputRowStream(relativePath?: string): Promise<ReadableStream<string[]>> {
+export async function getInputRowStream(relativePath?:string, splitDelimiter:string|RegExp = /\s+/): Promise<ReadableStream<string[]>> {
   const lineReader = await getInputLineStream(relativePath)
   return lineReader!
     .pipeThrough(new TransformStream({
