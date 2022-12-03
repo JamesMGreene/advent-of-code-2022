@@ -9,7 +9,10 @@ interface IMap<T> {
 const SHAPES:IMap<string> = {
   A: 'rock',
   B: 'paper',
-  C: 'scissors'
+  C: 'scissors',
+  X: 'rock',
+  Y: 'paper',
+  Z: 'scissors'
 }
 
 const SHAPE_VALUES:IMap<number> = {

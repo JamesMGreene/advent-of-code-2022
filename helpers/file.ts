@@ -4,7 +4,7 @@ import { DelimiterStream } from 'https://deno.land/std/streams/delimiter_stream.
 
 const DEFAULT_INPUT_FILE_PATH = '../input.txt'
 
-export async function readRelativeFile(relativePath: string): Promise<ReadableStream<Uint8Array>> {
+export async function readRelativeFile(relativePath:string): Promise<ReadableStream<Uint8Array>> {
   // Figure out the file path relative to the main executing script file
   const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
   const inputFilePath = path.resolve(mainModuleDir, relativePath)
@@ -36,14 +36,14 @@ export async function getInputRowStream(relativePath?: string): Promise<Readable
         const trimmedRow = row.trim()
         // Omit empty rows
         if (trimmedRow !== '') {
-          const cells = trimmedRow.split(/\s+/)
+          const cells = trimmedRow.split(splitDelimiter)
           controller.enqueue(cells)
         }
       }
     }))
 }
 
-export async function getInputSectionStream(relativePath?: string): Promise<ReadableStream<string[]>> {
+export async function getInputSectionStream(relativePath?:string): Promise<ReadableStream<string[]>> {
   const inputStream = await getInputStream(relativePath)
   return inputStream!
     .pipeThrough(new DelimiterStream(new TextEncoder().encode('\n\n'))) // transform into a stream where each chunk is divided by two newlines
