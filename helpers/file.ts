@@ -22,17 +22,21 @@ export async function getInputLineStream(relativePath:string): Promise<ReadableS
     .pipeThrough(new TextLineStream()) // transform into a stream where each chunk is divided by a newline
 }
 
-export async function getInputRowStream(relativePath:string, splitDelimiter:string|RegExp = /\s+/): Promise<ReadableStream<string[]>> {
+export async function getInputRowStream(relativePath:string, options?: { delimiter?:string|RegExp, includeEmptyRows?:boolean }): Promise<ReadableStream<string[]>> {
+  const splitDelimiter = options?.delimiter ?? /\s+/
+  const omitEmptyRows = options?.includeEmptyRows !== true
   const lineReader = await getInputLineStream(relativePath)
   return lineReader!
     .pipeThrough(new TransformStream({
       transform: (row:string, controller) => {
         const trimmedRow = row.trim()
-        // Omit empty rows
-        if (trimmedRow !== '') {
-          const cells = trimmedRow.split(splitDelimiter)
-          controller.enqueue(cells)
-        }
+
+        // Omit empty rows?
+        const isEmptyRow = trimmedRow === ''
+        if (omitEmptyRows && isEmptyRow) return
+
+        const cells = isEmptyRow ? [] : trimmedRow.split(splitDelimiter)
+        controller.enqueue(cells)
       }
     }))
 }

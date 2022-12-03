@@ -25,7 +25,7 @@ function getIntersection(a:Set<string>, b:Set<string>) {
 
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const rowCharReader = await getInputRowStream(getInputFileName(), '')
+const rowCharReader = await getInputRowStream(getInputFileName(), { delimiter: '' })
 
 let cumulativeItemPriority = 0
 
