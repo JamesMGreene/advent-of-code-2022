@@ -3,7 +3,7 @@
 # New exercises are released every day at midnight EST.
 TODAY=$(TZ=America/New_York date +%d)
 
-# Collect arguments to pass along to the run script
+# Collect arguments to pass along to the run script, e.g. `-s` for sample data
 ARGS=("$@")
 
 # May include leading zeroes; e.g. 01, 25

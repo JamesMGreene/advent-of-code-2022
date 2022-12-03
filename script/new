@@ -4,13 +4,12 @@
 TODAY=$(TZ=America/New_York date +%d)
 THIS_YEAR=$(TZ=America/New_York date +%Y)
 
-DAY=${1:-$TODAY}
+# May include leading zeroes; e.g. 01, 25
+PADDED_DAY=$TODAY
 # Strip any leading zeroes; e.g. 00 -> 0, 0001 -> 1, 25 -> 25
-[[ "$DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
-# Add a leading zero, if needed; e.g. 1 -> 01, 25 -> 25
-FORMATTED_DAY=$(printf "%02d" $DAY)
+[[ "$PADDED_DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
 
-NEW_DIR="day${FORMATTED_DAY}"
+NEW_DIR="day${PADDED_DAY}"
 
 # Stop immediately if the directory already exists
 if [[ -d "${NEW_DIR}" ]]; then
