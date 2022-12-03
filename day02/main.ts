@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read
 
-import { getInputRowStream } from '../../helpers/file.ts'
-import { getInputFileName } from '../../helpers/args.ts'
+import { getInputRowStream } from '../helpers/file.ts'
+import { getInputFileName } from '../helpers/args.ts'
 
 interface IMap<T> {
   [index: string]: T;
@@ -66,7 +66,7 @@ let myScorePt1 = 0
 let myScorePt2 = 0
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const rowReader = await getInputRowStream('../' + getInputFileName())
+const rowReader = await getInputRowStream(getInputFileName())
 
 // Assess each group of numbers
 for await (const [oppChoice, secondCode] of rowReader) {
