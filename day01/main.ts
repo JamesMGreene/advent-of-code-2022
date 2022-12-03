@@ -1,9 +1,9 @@
 #!/usr/bin/env -S deno run --allow-read
 
-import { getInputSectionStream } from '../../helpers/file.ts'
-import { sortAscending } from '../../helpers/array.ts'
-import { _ } from '../../helpers/lodash.ts'
-import { getInputFileName } from '../../helpers/args.ts'
+import { getInputSectionStream } from '../helpers/file.ts'
+import { sortAscending } from '../helpers/array.ts'
+import { _ } from '../helpers/lodash.ts'
+import { getInputFileName } from '../helpers/args.ts'
 
 // Prepare the processing functions
 const highestValues = [0, 0, 0]
@@ -20,7 +20,7 @@ function maybeUpdateHighestValues(currentSum:number) {
 }
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const sectionReader = await getInputSectionStream('../' + getInputFileName())
+const sectionReader = await getInputSectionStream(getInputFileName())
 
 // Assess each group of numbers
 for await (const lines of sectionReader) {
