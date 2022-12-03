@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-read
 
 import { getInputRowStream } from '../helpers/file.ts'
+import { getInputFileName } from '../helpers/args.ts'
 
 //
 // Processing functions
@@ -24,7 +25,7 @@ function getIntersection(a:Set<string>, b:Set<string>) {
 
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const rowCharReader = await getInputRowStream('./input.txt', '')
+const rowCharReader = await getInputRowStream(getInputFileName(), '')
 
 let cumulativeItemPriority = 0
 

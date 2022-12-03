@@ -2,6 +2,7 @@
 
 import { getInputSectionStream } from '../../helpers/file.ts'
 import { sortAscending, sum, sumLines } from '../../helpers/array.ts'
+import { getInputFileName } from '../../helpers/args.ts'
 
 // Prepare the processing functions
 const highestValues = [0, 0, 0]
@@ -18,7 +19,7 @@ function maybeUpdateHighestValues(currentSum:number) {
 }
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
-const sectionReader = await getInputSectionStream()
+const sectionReader = await getInputSectionStream('../' + getInputFileName())
 
 // Assess each group of numbers
 for await (const lines of sectionReader) {
