@@ -28,41 +28,33 @@ function getBidirectionalOverlapType(range1:IRange, range2:IRange) : OverlapType
     return OverlapType.None
   }
 
+  // if range1 fully contains range2
   const range1_min_lte_range2_min = range1.min <= range2.min
   const range1_max_gte_range2_max = range1.max >= range2.max
+  if (range1_min_lte_range2_min && range1_max_gte_range2_max) return OverlapType.Full
+
+  // if range2 fully contains range1
   const range2_min_lte_range1_min = range2.min <= range1.min
   const range2_max_gte_range1_max = range2.max >= range1.max
-  if (
-    // range1 fully contains range2
-    (range1_min_lte_range2_min && range1_max_gte_range2_max) ||
-    // range2 fully contains range1
-    (range2_min_lte_range1_min && range2_max_gte_range1_max)
-  ) {
-    return OverlapType.Full
-  }
+  if (range2_min_lte_range1_min && range2_max_gte_range1_max) return OverlapType.Full
 
+  // if range1 overlaps range2 on the left
   const range1_max_lte_range2_max = range1.max <= range2.max
+  if (range1_min_lte_range2_min && range1_max_lte_range2_max) return OverlapType.Partial
+
+  // if range2 overlaps range1 on the left
   const range2_max_lte_range1_max = range2.max <= range1.max
-  if (
-    // range1 overlaps range2 on the left
-    (range1_min_lte_range2_min && range1_max_lte_range2_max) ||
-    // range2 overlaps range1 on the left
-    (range2_min_lte_range1_min && range2_max_lte_range1_max)
-  ) {
-    return OverlapType.Partial
-  }
+  if (range2_min_lte_range1_min && range2_max_lte_range1_max) return OverlapType.Partial
 
+  // if range1 overlaps range2 on the right
   const range1_min_gte_range2_min = range1.min >= range2.min
-  const range2_min_gte_range1_min = range2.min >= range1.min
-  if (
-    // range1 overlaps range2 on the right
-    (range1_min_gte_range2_min && range1_max_gte_range2_max) ||
-    // range2 overlaps range1 on the right
-    (range2_min_gte_range1_min && range2_max_gte_range1_max)
-  ) {
-    return OverlapType.Partial
-  }
+  if (range1_min_gte_range2_min && range1_max_gte_range2_max) return OverlapType.Partial
 
+  // if range2 overlaps range1 on the right
+  const range2_min_gte_range1_min = range2.min >= range1.min
+  if (range2_min_gte_range1_min && range2_max_gte_range1_max) return OverlapType.Partial
+
+  // Uh oh... that shouldn't have happened
   throw new Error('Should identified an OverlapType by now!')
 }
 
