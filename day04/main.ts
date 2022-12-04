@@ -22,32 +22,48 @@ function getRange(input:string) : IRange {
   return { min, max }
 }
 
-function getOverlapType(range1:IRange, range2:IRange) : OverlapType {
-  // Left overlap
-  if (range1.min <= range2.min) {
-    if (range1.max >= range2.max) {
-      return OverlapType.Full
-    } else if (range1.max >= range2.min) {
-      return OverlapType.Partial
-    }
+function getBidirectionalOverlapType(range1:IRange, range2:IRange) : OverlapType {
+  // Ranges do not overlap at all
+  if (range1.max < range2.min || range2.max < range1.min) {
+    return OverlapType.None
   }
-  // Right overlap
-  else if (range1.min <= range2.max && range1.max >= range2.max) {
+
+  const range1_min_lte_range2_min = range1.min <= range2.min
+  const range1_max_gte_range2_max = range1.max >= range2.max
+  const range2_min_lte_range1_min = range2.min <= range1.min
+  const range2_max_gte_range1_max = range2.max >= range1.max
+  if (
+    // range1 fully contains range2
+    (range1_min_lte_range2_min && range1_max_gte_range2_max) ||
+    // range2 fully contains range1
+    (range2_min_lte_range1_min && range2_max_gte_range1_max)
+  ) {
+    return OverlapType.Full
+  }
+
+  const range1_max_lte_range2_max = range1.max <= range2.max
+  const range2_max_lte_range1_max = range2.max <= range1.max
+  if (
+    // range1 overlaps range2 on the left
+    (range1_min_lte_range2_min && range1_max_lte_range2_max) ||
+    // range2 overlaps range1 on the left
+    (range2_min_lte_range1_min && range2_max_lte_range1_max)
+  ) {
     return OverlapType.Partial
   }
-  return OverlapType.None
-}
 
-function getBidirectionalOverlapType(range1:IRange, range2:IRange) : OverlapType {
-  const overlap1 = getOverlapType(range1, range2)
-  //console.debug('range1', range1, 'range2', range2)
-  //console.debug('overlap1', overlap1)
-  if (overlap1 !== OverlapType.Full) {
-    const overlap2 = getOverlapType(range2, range1)
-    //console.debug('overlap2', overlap2)
-    return overlap2
+  const range1_min_gte_range2_min = range1.min >= range2.min
+  const range2_min_gte_range1_min = range2.min >= range1.min
+  if (
+    // range1 overlaps range2 on the right
+    (range1_min_gte_range2_min && range1_max_gte_range2_max) ||
+    // range2 overlaps range1 on the right
+    (range2_min_gte_range1_min && range2_max_gte_range1_max)
+  ) {
+    return OverlapType.Partial
   }
-  return overlap1
+
+  throw new Error('Should identified an OverlapType by now!')
 }
 
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
