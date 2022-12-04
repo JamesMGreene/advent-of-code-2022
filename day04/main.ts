@@ -62,10 +62,10 @@ for await (const [firstAssignment, secondAssignment] of rowRangeReader) {
   const secondRange = getRange(secondAssignment)
 
   const overlapType = getBidirectionalOverlapType(firstRange, secondRange)
-  if (overlapType === 'full') {
+  if (overlapType === OverlapType.Full) {
     fullOverlaps++
     partialOverlaps++
-  } else if (overlapType === 'partial') {
+  } else if (overlapType === OverlapType.Partial) {
     partialOverlaps++
   }
 }
