@@ -31,5 +31,5 @@ for await (const [firstAssignment, secondAssignment] of rowRangeReader) {
   }
 }
 
-console.log('[pt1] Overlaps: ' + fullOverlaps)
+console.log('[pt1] Full overlaps: ' + fullOverlaps)
 console.log('[pt2] Partial overlaps: ' + partialOverlaps)
