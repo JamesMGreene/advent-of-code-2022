@@ -37,6 +37,7 @@ function getBidirectionalOverlapType(range1:IRange, range2:IRange) : OverlapType
     return OverlapType.Full
   }
 
+  // Now we can assume everything else is a partial overlap 🤷
   // if range1 overlaps range2 on the left
   // if range2 overlaps range1 on the left
   // if range1 overlaps range2 on the right
