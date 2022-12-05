@@ -2,18 +2,19 @@ import * as path from 'https://deno.land/std/path/mod.ts'
 import { TextLineStream } from 'https://deno.land/std/streams/text_line_stream.ts'
 import { DelimiterStream } from 'https://deno.land/std/streams/delimiter_stream.ts'
 
-export async function getInputText(relativePath:string): Promise<string> {
+// Figure out the file path relative to the main executing script file
+export function resolvePath(relativePath:string): string {
   const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
-  const inputFilePath = path.resolve(mainModuleDir, relativePath)
+  return path.resolve(mainModuleDir, relativePath)
+}
 
-  const text = await Deno.readTextFile(inputFilePath)
-  return text
+export function getInputText(relativePath:string): Promise<string> {
+  const inputFilePath = resolvePath(relativePath)
+  return Deno.readTextFile(inputFilePath)
 }
 
 export async function getInputStream(relativePath:string): Promise<ReadableStream<Uint8Array>> {
-  // Figure out the file path relative to the main executing script file
-  const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
-  const inputFilePath = path.resolve(mainModuleDir, relativePath)
+  const inputFilePath = resolvePath(relativePath)
 
   // Try opening the input file; if it fails, let the error propagate
   const inputFile = await Deno.open(inputFilePath, { read: true })
