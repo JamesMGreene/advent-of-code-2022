@@ -47,7 +47,7 @@ const stacksMulti:string[][] = _.cloneDeep(stacksSingle)
 
 const procedureSteps = procedure.split('\n')
 const parsedSteps = procedureSteps.filter(Boolean).map(parseStep)
-//console.debug(JSON.stringify(stepsData, null, 2))
+//console.debug(JSON.stringify(parsedSteps, null, 2))
 
 for (const { quantity, from, to } of parsedSteps) {
   for (let i = 0; i < quantity; i++) {
