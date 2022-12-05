@@ -2,6 +2,7 @@
 
 import { getInputText } from '../helpers/file.ts'
 import { getInputFileName } from '../helpers/args.ts'
+import { _ } from '../helpers/lodash.ts'
 
 interface IStep {
   quantity: number,
@@ -26,7 +27,6 @@ const stackNumberLine = drawingLines.pop()
 const stackCount = Number(stackNumberLine!.match(/\d+\s*$/)!.pop())
 
 const stacksSingle:string[][] = Array(stackCount).fill(0).map(_ => [])
-const stacksMulti:string[][] = Array(stackCount)
 for (const drawingLine of drawingLines) {
   //console.debug(drawingLine)
   for (let i = 0; i < stackCount; i++) {
@@ -40,7 +40,7 @@ for (const drawingLine of drawingLines) {
 }
 
 // Copy the stacks over
-stacksSingle.forEach((stack, i) => stacksMulti[i] = stack.slice())
+const stacksMulti:string[][] = _.cloneDeep(stacksSingle)
 
 //console.debug(JSON.stringify(stacksSingle))
 //console.debug(JSON.stringify(stacksMulti))
