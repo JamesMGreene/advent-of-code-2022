@@ -2,6 +2,14 @@ import * as path from 'https://deno.land/std/path/mod.ts'
 import { TextLineStream } from 'https://deno.land/std/streams/text_line_stream.ts'
 import { DelimiterStream } from 'https://deno.land/std/streams/delimiter_stream.ts'
 
+export async function getInputText(relativePath:string): Promise<string> {
+  const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
+  const inputFilePath = path.resolve(mainModuleDir, relativePath)
+
+  const text = await Deno.readTextFile(inputFilePath)
+  return text
+}
+
 export async function getInputStream(relativePath:string): Promise<ReadableStream<Uint8Array>> {
   // Figure out the file path relative to the main executing script file
   const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule))
