@@ -32,9 +32,12 @@ curl --silent -o "${NEW_DIR}/input.txt" "https://adventofcode.com/${THIS_YEAR}/d
 curl --silent -o "${NEW_DIR}/story.html" "https://adventofcode.com/${THIS_YEAR}/day/${DAY}" --cookie "session=${AOC_SESSION}"
 
 # Parse the story HTML to extract the sample input and output
-perl -ne '$/ = undef; print "$1" and exit 0 if /<pre><code>(.+?)<\/code><\/pre>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample.txt"
-perl -ne '$/ = undef; print "$1" and exit 0 if /<code><em>(.+?)<\/em><\/code>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt1.txt"
-perl -ne '$/ = undef; print "$1" and exit 0 if /<h2 id="part2">.+?<code><em>(.+?)<\/em><\/code>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt2.txt"
+# Get first example input
+perl -ne '$/ = undef; print "$1" and exit 0 if /^.*?<pre><code>(.+?)<\/code><\/pre>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample.txt"
+# Get last example output before Part 2
+perl -ne '$/ = undef; print "$1" and exit 0 if /<code><em>(.+?)<\/em><\/code>.*?<\/article>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt1.txt"
+# Get last example output after Part 1
+perl -ne '$/ = undef; print "$1" and exit 0 if /<h2 id="part2">.+<code><em>(.+?)<\/em><\/code>.*?$/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt2.txt"
 
 SAMPLE_OUTPUT_PART2_FILESIZE=$(wc -c "${NEW_DIR}/sample_output.pt2.txt" | awk '{print $1}')
 if [[ "$SAMPLE_OUTPUT_PART2_FILESIZE" -eq 0 ]]; then
