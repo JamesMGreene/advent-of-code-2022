@@ -38,7 +38,7 @@ perl -ne '$/ = undef; print "$1" and exit 0 if /<h2 id="part2">.+?<code><em>(.+?
 
 SAMPLE_OUTPUT_PART2_FILESIZE=$(wc -c "${NEW_DIR}/sample_output.pt2.txt" | awk '{print $1}')
 if [[ "$SAMPLE_OUTPUT_PART2_FILESIZE" -eq 0 ]]; then
-  echo "⚠️ WARNING: Unable to download the sample output for Part 2 until you've completed Part 1." >&2
+  echo "⛔️ WARNING: Unable to download the sample output for Part 2 until you've completed Part 1." >&2
   echo "ℹ️ You can safely run this script again after submitting your answer to Part 1!" >&2
 fi
 
