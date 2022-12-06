@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# New exercises are released every day at midnight EST.
+TODAY=$(TZ=America/New_York date +%d)
+
+# May include leading zeroes; e.g. 01, 25
+PADDED_DAY=${1:-$TODAY}
+# Strip any leading zeroes; e.g. 00 -> 0, 0001 -> 1, 25 -> 25
+[[ "$PADDED_DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
+
+DIR="day${PADDED_DAY}"
+
+# Stop immediately if the directory or files do not exist
+REQUIRED_FILES=( "main.ts" "sample.txt" "sample_output.pt1.txt" "sample_output.pt2.txt" )
+if [[ ! -d "${DIR}" ]]; then
+  echo "ERROR: Directory '${DIR}' does not exist!" >&2
+  exit 1
+fi
+for REQUIRED_FILE in "${REQUIRED_FILES[@]}"; do
+  if [[ ! -f "${DIR}/${REQUIRED_FILE}" ]]; then
+    echo "ERROR: File '${DIR}/${REQUIRED_FILE}' does not exist!" >&2
+    exit 1
+  fi
+done
+
+# Run today's exercise with sample data
+ACTUAL_OUTPUT=$(deno run --allow-read "${DIR}/main.ts" -s)
+
+# Parse the output into actual answers
+ACTUAL_PART1=$(echo "$ACTUAL_OUTPUT" | grep "\[pt1\] " | sed -E "s/^[^:]+: //")
+ACTUAL_PART2=$(echo "$ACTUAL_OUTPUT" | grep "\[pt2\] " | sed -E "s/^[^:]+: //")
+
+# Load the expected answers from files
+EXPECTED_PART1=$(cat "${DIR}/sample_output.pt1.txt")
+EXPECTED_PART2=$(cat "${DIR}/sample_output.pt2.txt")
+
+# Announce input in use
+echo "Given the following sample input:"
+cat "${DIR}/sample.txt"
+echo ""
+echo ""
+
+# Compare the actual answers to the expected answers
+FAILURE_COUNT=0
+
+if [[ ! -z "$ACTUAL_PART1" && "$ACTUAL_PART1" == "$EXPECTED_PART1" ]]; then
+  echo "✅ Part 1: success!"
+  echo "  Answer:   $ACTUAL_PART1"
+else
+  echo "❌ Part 1: failure!" >&2
+  echo "  Expected: $EXPECTED_PART1" >&2
+  echo "  Actual:   $ACTUAL_PART1" >&2
+  FAILURE_COUNT=$((FAILURE_COUNT + 1))
+fi
+
+if [[ ! -z "$ACTUAL_PART2" && "$ACTUAL_PART2" == "$EXPECTED_PART2" ]]; then
+  echo "✅ Part 2: success!"
+  echo "  Answer:   $ACTUAL_PART2"
+else
+  echo "❌ Part 2: failure!" >&2
+  echo "  Expected: $EXPECTED_PART2" >&2
+  echo "  Actual:   $ACTUAL_PART2" >&2
+  FAILURE_COUNT=$((FAILURE_COUNT + 1))
+fi
+
+exit $FAILURE_COUNT
