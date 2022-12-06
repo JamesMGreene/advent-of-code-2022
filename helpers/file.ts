@@ -24,6 +24,21 @@ export async function getInputStream(relativePath:string): Promise<ReadableStrea
   return inputFile.readable
 }
 
+export async function getInputCharStream(relativePath:string): Promise<ReadableStream<string>> {
+  const inputReader = await getInputStream(relativePath)
+  return inputReader!
+    // convert Uint8Array to string
+    .pipeThrough(new TextDecoderStream())
+    // transform into a stream of individual characters
+    .pipeThrough(new TransformStream({
+      transform: (chunk:string, controller) => {
+        for (const char of chunk) {
+          controller.enqueue(char)
+        }
+      }
+    }))
+}
+
 export async function getInputLineStream(relativePath:string): Promise<ReadableStream<string>> {
   const inputReader = await getInputStream(relativePath)
   return inputReader!
