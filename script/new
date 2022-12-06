@@ -6,23 +6,38 @@ THIS_YEAR=$(TZ=America/New_York date +%Y)
 
 # May include leading zeroes; e.g. 01, 25
 PADDED_DAY=$TODAY
+
 # Strip any leading zeroes; e.g. 00 -> 0, 0001 -> 1, 25 -> 25
 [[ "$PADDED_DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
 
 NEW_DIR="day${PADDED_DAY}"
 
-# Stop immediately if the directory already exists
-if [[ -d "${NEW_DIR}" ]]; then
-  echo "ERROR: Directory '${NEW_DIR}' already exists!" >&2
-  exit 1
-fi
-
 # Create the new day's directory and copy the template files
 mkdir -p "${NEW_DIR}"
 touch "${NEW_DIR}/sample.txt"
+touch "${NEW_DIR}/sample_output.pt1.txt"
+touch "${NEW_DIR}/sample_output.pt2.txt"
 touch "${NEW_DIR}/input.txt"
-echo "console.log('hello, day ${DAY}!')"> "${NEW_DIR}/main.ts"
+
+# Ensure we aren't going to overwrite code we've already written
+if [[ ! -f "${NEW_DIR}/main.ts" ]]; then
+  echo "console.log('hello, day ${DAY}!')"> "${NEW_DIR}/main.ts"
+fi
 
 # Download the AoC input file for the day using a saved session cookie
 AOC_SESSION=$(cat aoc_session_cookie.txt)
 curl --silent -o "${NEW_DIR}/input.txt" "https://adventofcode.com/${THIS_YEAR}/day/${DAY}/input" --cookie "session=${AOC_SESSION}"
+
+# Temporarily download the AoC story HTML for the day using a saved session cookie
+curl --silent -o "${NEW_DIR}/story.html" "https://adventofcode.com/${THIS_YEAR}/day/${DAY}" --cookie "session=${AOC_SESSION}"
+
+# Parse the story HTML to extract the sample input and output
+perl -ne '$/ = undef; print "$1" and exit 0 if /<pre><code>(.+?)<\/code><\/pre>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample.txt"
+perl -ne '$/ = undef; print "$1" and exit 0 if /<code><em>(.+?)<\/em><\/code>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt1.txt"
+perl -ne '$/ = undef; print "$1" and exit 0 if /<h2 id="part2">.+?<code><em>(.+?)<\/em><\/code>/s' "${NEW_DIR}/story.html" > "${NEW_DIR}/sample_output.pt2.txt"
+
+# Remove the story HTML file
+rm "${NEW_DIR}/story.html"
+
+# Finally, open the day in the browser for easier viewing as well
+open "https://adventofcode.com/${THIS_YEAR}/day/${DAY}"
