@@ -16,29 +16,84 @@ const MAX_USED_DISK_SPACE = TOTAL_DISK_SPACE - REQUIRED_FREE_DISK_SPACE
 const commandReader = await getInputSectionStream(getInputFileName(), { sectionDelimiter: '$ ', lineDelimiter: '\n' })
 
 // Filesystem mapping
-interface IFile {
+interface INode {
+  type: string,
   name: string,
   path: string,
-  parentDir: IDirectory,
+  parentNode: IDirectory|null,
   size: number
 }
-interface IDirectory {
-  name: string,
-  path: string,
-  parentDir: IDirectory|null,
-  files: IFile[],
-  directories: IDirectory[],
-  cumulativeSize: number
+interface IDirectory extends INode {
+  type: string,
+  childNodes: Map<string, INode>
 }
-const fsMap:IDirectory = {
-  name: '/',
-  path: '/',
-  parentDir: null,
-  files: [],
-  directories: [],
-  cumulativeSize: 0
+
+function createNewDir(name:string, parentNode:IDirectory|null):IDirectory {
+  return {
+    type: 'directory',
+    name,
+    path: parentNode ? path.resolve(parentNode.path, name) : name,
+    parentNode,
+    size: 0,
+    childNodes: new Map()
+  }
 }
-let currentPath = fsMap.path
+
+function createNewFile(name:string, parentNode:IDirectory, size:number):INode {
+  return {
+    type: 'file',
+    name,
+    path: path.resolve(parentNode.path, name),
+    parentNode,
+    size
+  }
+}
+
+// NOTE: Intentionally causing side effects throughout ancestral directories!
+function updateCumulativeSizes(dir:IDirectory, sizeOfAddedFile:number): void {
+  dir.size += sizeOfAddedFile
+  if (!dir.parentNode) return
+  // Tail recursion
+  return updateCumulativeSizes(dir.parentNode!, sizeOfAddedFile)
+}
+
+function part1Reducer(acc:number, currentNode:INode):number {
+  if (currentNode.type === 'directory') {
+    const currentDir = currentNode as IDirectory
+    if (currentDir.size <= 100000) {
+      acc += currentNode.size
+    }
+    // Recurse
+    for (const [, childNode] of currentDir.childNodes[Symbol.iterator]()) {
+      acc += part1Reducer(0, childNode)
+    }
+  }
+  return acc
+}
+
+function part2Reducer(dirToDelete:IDirectory|null, currentNode:INode, minimumSize:number):IDirectory|null {
+  if (currentNode.type === 'directory') {
+    const currentDir = currentNode as IDirectory
+    if (
+      // Cannot delete the root directory
+      !!currentNode.parentNode &&
+      // Must be at least the minimum size worthy of deletion
+      currentDir.size >= minimumSize &&
+      // Must be smaller than the current smallest directory worthy of deletion
+      (!dirToDelete || currentDir.size < dirToDelete.size) 
+    ) {
+      dirToDelete = currentDir
+    }
+
+    // Recurse
+    for (const [, childNode] of currentDir.childNodes[Symbol.iterator]()) {
+      dirToDelete = part2Reducer(dirToDelete, childNode, minimumSize)
+    }
+  }
+  return dirToDelete
+}
+
+const fsMap:IDirectory = createNewDir('/', null)
 let currentDir:IDirectory = fsMap
 
 // Assess each group of numbers
@@ -48,35 +103,28 @@ for await (const lines of commandReader) {
   if (!command) {
     continue
   }
-  console.debug(command)
 
   if (command.startsWith('cd ')) {
     const nextPath = command.slice(3)
 
     if (nextPath === '/') {
       currentDir = fsMap
-      currentPath = currentDir.path
       continue
     }
     else if (nextPath === '..') {
-      currentDir = currentDir.parentDir ?? fsMap
-      currentPath = currentDir.path
+      currentDir = currentDir.parentNode ?? fsMap
       continue
-    } else {
-      let nextDir:IDirectory|undefined = currentDir.directories.find(dir => dir.name === nextPath)
-      if (!nextDir) {
-        nextDir = {
-          name: nextPath,
-          path: path.resolve(currentPath, nextPath),
-          parentDir: currentDir,
-          files: [],
-          directories: [],
-          cumulativeSize: 0
-        }
-        currentDir.directories.push(nextDir)
+    }
+    else {
+      let nextDir:INode|undefined = currentDir.childNodes.get(nextPath)
+      if (nextDir && nextDir.type !== 'directory') {
+        throw new Error(`Path ${nextPath} is not a directory!`)
       }
-      currentDir = nextDir
-      currentPath = currentDir.path
+      if (!nextDir) {
+        nextDir = createNewDir(nextPath, currentDir)
+        currentDir.childNodes.set(nextPath, nextDir)
+      }
+      currentDir = nextDir as IDirectory
       continue
     }
   }
@@ -89,71 +137,40 @@ for await (const lines of commandReader) {
 
       const [firstPart, name] = line.split(' ')
       if (firstPart === 'dir') {
-        let dir:IDirectory|undefined = currentDir.directories.find(dir => dir.name === name)
+        let dir:INode|undefined = currentDir.childNodes.get(name)
+        if (dir && dir.type !== 'directory') {
+          throw new Error(`Path ${name} is not a directory!`)
+        }
         if (!dir) {
-          dir = {
-            name: name,
-            path: path.resolve(currentPath, name),
-            parentDir: currentDir,
-            files: [],
-            directories: [],
-            cumulativeSize: 0
-          }
-          currentDir.directories.push(dir)
+          dir = createNewDir(name, currentDir)
+          currentDir.childNodes.set(name, dir)
         }
       } else {
-        let file:IFile|undefined = currentDir.files.find(file => file.name === name)
+        let file:INode|undefined = currentDir.childNodes.get(name)
+        if (file && file.type !== 'file') {
+          throw new Error(`Path ${name} is not a file!`)
+        }
         if (!file) {
-          file = {
-            name,
-            path: path.resolve(currentPath, name),
-            parentDir: currentDir,
-            size: Number(firstPart)
-          }
-          currentDir.files.push(file)
+          const size = Number(firstPart)
+          file = createNewFile(name, currentDir, size)
+          currentDir.childNodes.set(name, file)
+          // Update cumulative sizes of all ancestral directories when adding a new file
+          updateCumulativeSizes(currentDir, size)
         }
       }
     }
   }
 }
 
-console.debug(JSON.stringify(fsMap, ['name', 'path', 'size', 'directories', 'files'], 2))
+//console.debug(JSON.stringify(fsMap, ['type', 'name', 'path', 'size', 'childNodes'], 2))
 
-const relevantDirs:IDirectory[] = []
-const allDirs:IDirectory[] = []
+const currentUsedDiskSpace = fsMap.size
+//console.debug('Total fs size: ' + fsMap.size)
 
-function calculateCumulativeSizes(dir:IDirectory): number {
-  let totalSize = 0
-  for (const file of dir.files) {
-    totalSize += file.size
-  }
-  for (const subDir of dir.directories) {
-    totalSize += calculateCumulativeSizes(subDir)
-  }
-  dir.cumulativeSize = totalSize
+const aggregateSizeOfRelevantDirs = part1Reducer(0, fsMap)
 
-  if (dir.cumulativeSize <= 100000) {
-    relevantDirs.push(dir)
-  }
+const minimumDirSizeToDelete = currentUsedDiskSpace - MAX_USED_DISK_SPACE
+const dirToDelete = part2Reducer(null, fsMap, minimumDirSizeToDelete)
 
-  if (dir.path !== '/') {
-    allDirs.push(dir)
-  }
-
-  return totalSize
-}
-
-const fsSize = calculateCumulativeSizes(fsMap)
-
-console.debug(JSON.stringify(fsMap, ['name', 'path', 'size', 'directories', 'files', 'cumulativeSize'], 2))
-console.debug('Total fs size: ' + fsSize)
-
-const cumulativeSizeSumOfRelevantDirs = _.sumBy(relevantDirs, 'cumulativeSize')
-
-const currentUsedDiskSpace = fsMap.cumulativeSize
-const bigEnoughDirs = allDirs.filter(dir => (currentUsedDiskSpace - dir.cumulativeSize) <= MAX_USED_DISK_SPACE)
-const bigEnoughDirsSortedAscBySize:IDirectory[] = _.sortBy(bigEnoughDirs, 'cumulativeSize')
-const dirToDelete = bigEnoughDirsSortedAscBySize[0]
-
-console.log('[pt1] Sum: ' + cumulativeSizeSumOfRelevantDirs)
-console.log('[pt2] Best dir to delete (' + dirToDelete.path + '), size: ' + dirToDelete.cumulativeSize)
+console.log('[pt1] Aggregate size: ' + aggregateSizeOfRelevantDirs)
+console.log('[pt2] Best dir to delete (' + dirToDelete!.path + '), size: ' + dirToDelete!.size)
