@@ -1,7 +1,6 @@
 import { getInputSectionStream } from '../helpers/file.ts'
 import { getInputFileName } from '../helpers/args.ts'
 import * as path from 'https://deno.land/std/path/mod.ts'
-import { _ } from '../helpers/lodash.ts'
 
 // Constants
 const TOTAL_DISK_SPACE = 70000000
