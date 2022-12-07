@@ -24,28 +24,57 @@ interface INode {
   size: number
 }
 interface IDirectory extends INode {
-  type: string,
   childNodes: Map<string, INode>
 }
 
-function createNewDir(name:string, parentNode:IDirectory|null):IDirectory {
-  return {
-    type: 'directory',
-    name,
-    path: parentNode ? path.resolve(parentNode.path, name) : name,
-    parentNode,
-    size: 0,
-    childNodes: new Map()
+class File implements INode {
+  // INode properties
+  type: string
+  name: string
+  path: string
+  parentNode: Directory
+  size: number
+
+  constructor(name:string, parentNode:Directory, size:number) {
+    this.type = 'file'
+    this.name = name
+    this.path = path.resolve(parentNode.path, name)
+    this.parentNode = parentNode
+    this.size = size
   }
 }
 
-function createNewFile(name:string, parentNode:IDirectory, size:number):INode {
-  return {
-    type: 'file',
-    name,
-    path: path.resolve(parentNode.path, name),
-    parentNode,
-    size
+class Directory implements IDirectory {
+  // INode properties
+  type: string
+  name: string
+  path: string
+  parentNode: Directory|null
+  size: number
+
+  // IDirectory properties
+  childNodes: Map<string, INode>
+
+  constructor(name:string, parentNode:Directory|null) {
+    this.type = 'directory'
+    this.name = name
+    this.path = parentNode ? path.resolve(parentNode.path, name) : name
+    this.parentNode = parentNode
+    this.size = 0
+    this.childNodes = new Map()
+  }
+
+  addChildNode(node:INode): void {
+    const oldNode = this.childNodes.get(node.name)
+    const oldSize = oldNode?.size ?? 0
+
+    // Add or overwrite the node
+    this.childNodes.set(node.name, node)
+
+    // Update cumulative sizes of all ancestral directories when adding a new file
+    if (node.type === 'file') {
+      updateCumulativeSizes(this, node.size - oldSize)
+    }
   }
 }
 
@@ -93,8 +122,8 @@ function part2Reducer(dirToDelete:IDirectory|null, currentNode:INode, minimumSiz
   return dirToDelete
 }
 
-const fsMap:IDirectory = createNewDir('/', null)
-let currentDir:IDirectory = fsMap
+const fsMap = new Directory('/', null)
+let currentDir:Directory = fsMap
 
 // Assess each group of numbers
 for await (const lines of commandReader) {
@@ -121,10 +150,10 @@ for await (const lines of commandReader) {
         throw new Error(`Path ${nextPath} is not a directory!`)
       }
       if (!nextDir) {
-        nextDir = createNewDir(nextPath, currentDir)
-        currentDir.childNodes.set(nextPath, nextDir)
+        nextDir = new Directory(nextPath, currentDir)
+        currentDir.addChildNode(nextDir)
       }
-      currentDir = nextDir as IDirectory
+      currentDir = nextDir as Directory
       continue
     }
   }
@@ -142,8 +171,8 @@ for await (const lines of commandReader) {
           throw new Error(`Path ${name} is not a directory!`)
         }
         if (!dir) {
-          dir = createNewDir(name, currentDir)
-          currentDir.childNodes.set(name, dir)
+          dir = new Directory(name, currentDir)
+          currentDir.addChildNode(dir)
         }
       } else {
         let file:INode|undefined = currentDir.childNodes.get(name)
@@ -152,10 +181,8 @@ for await (const lines of commandReader) {
         }
         if (!file) {
           const size = Number(firstPart)
-          file = createNewFile(name, currentDir, size)
-          currentDir.childNodes.set(name, file)
-          // Update cumulative sizes of all ancestral directories when adding a new file
-          updateCumulativeSizes(currentDir, size)
+          file = new File(name, currentDir, size)
+          currentDir.addChildNode(file)
         }
       }
     }
@@ -165,7 +192,7 @@ for await (const lines of commandReader) {
 //console.debug(JSON.stringify(fsMap, ['type', 'name', 'path', 'size', 'childNodes'], 2))
 
 const currentUsedDiskSpace = fsMap.size
-//console.debug('Total fs size: ' + fsMap.size)
+//console.debug('Total fs size: ' + currentUsedDiskSpace)
 
 const aggregateSizeOfRelevantDirs = part1Reducer(0, fsMap)
 
