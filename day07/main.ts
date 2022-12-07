@@ -28,14 +28,15 @@ interface IDirectory extends INode {
 
 class File implements INode {
   // INode properties
-  type: string
+  get type(): string {
+    return 'file'
+  }
   name: string
   path: string
   parentNode: Directory
   size: number
 
   constructor(name:string, parentNode:Directory, size:number) {
-    this.type = 'file'
     this.name = name
     this.path = path.resolve(parentNode.path, name)
     this.parentNode = parentNode
@@ -45,7 +46,9 @@ class File implements INode {
 
 class Directory implements IDirectory {
   // INode properties
-  type: string
+  get type(): string {
+    return 'directory'
+  }
   name: string
   path: string
   parentNode: Directory|null
@@ -55,7 +58,6 @@ class Directory implements IDirectory {
   childNodes: Map<string, INode>
 
   constructor(name:string, parentNode:Directory|null) {
-    this.type = 'directory'
     this.name = name
     this.path = parentNode ? path.resolve(parentNode.path, name) : name
     this.parentNode = parentNode
