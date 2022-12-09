@@ -4,14 +4,17 @@
 TODAY=$(TZ=America/New_York date +%d)
 
 # May include leading zeroes; e.g. 01, 25
-PADDED_DAY=${1:-$TODAY}
+PADDED_DAY=$TODAY
 # Strip any leading zeroes; e.g. 00 -> 0, 0001 -> 1, 25 -> 25
 [[ "$PADDED_DAY" =~ ^0*([0-9]+)$ ]] && DAY=${BASH_REMATCH[1]}
 
 DIR="day${PADDED_DAY}"
 
+SAMPLE_NUMBER=${1:-}
+echo "Testing ${DIR} with sample ${SAMPLE_NUMBER}..."
+
 # Stop immediately if the directory or files do not exist
-REQUIRED_FILES=( "main.ts" "sample.txt" "sample_output.pt1.txt" "sample_output.pt2.txt" )
+REQUIRED_FILES=( "main.ts" "sample.txt" "sample${SAMPLE_NUMBER}.txt" "sample${SAMPLE_NUMBER}_output.pt1.txt" "sample${SAMPLE_NUMBER}_output.pt2.txt" )
 if [[ ! -d "${DIR}" ]]; then
   echo "ERROR: Directory '${DIR}' does not exist!" >&2
   exit 1
@@ -23,20 +26,31 @@ for REQUIRED_FILE in "${REQUIRED_FILES[@]}"; do
   fi
 done
 
+# Potentially swap the sample data
+if [[ ! -z "$SAMPLE_NUMBER" ]]; then
+  cp -n "${DIR}/sample.txt" "${DIR}/sample.original.txt" || echo "ERROR: Original sample already backed up!">&2
+  cp -f "${DIR}/sample${SAMPLE_NUMBER}.txt" "${DIR}/sample.txt"
+fi
+
 # Run today's exercise with sample data
 ACTUAL_OUTPUT=$(deno run --allow-read "${DIR}/main.ts" -s)
+
+# Potentially revert the sample data
+if [[ ! -z "$SAMPLE_NUMBER" ]]; then
+  mv -f "${DIR}/sample.original.txt" "${DIR}/sample.txt"
+fi
 
 # Parse the output into actual answers
 ACTUAL_PART1=$(echo "$ACTUAL_OUTPUT" | grep "\[pt1\] " | sed -E "s/^[^:]+: //")
 ACTUAL_PART2=$(echo "$ACTUAL_OUTPUT" | grep "\[pt2\] " | sed -E "s/^[^:]+: //")
 
 # Load the expected answers from files
-EXPECTED_PART1=$(cat "${DIR}/sample_output.pt1.txt")
-EXPECTED_PART2=$(cat "${DIR}/sample_output.pt2.txt")
+EXPECTED_PART1=$(cat "${DIR}/sample${SAMPLE_NUMBER}_output.pt1.txt")
+EXPECTED_PART2=$(cat "${DIR}/sample${SAMPLE_NUMBER}_output.pt2.txt")
 
 # Announce input in use
 echo "Given the following sample input:"
-cat "${DIR}/sample.txt"
+cat "${DIR}/sample${SAMPLE_NUMBER}.txt"
 echo ""
 echo ""
 
