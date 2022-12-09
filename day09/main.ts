@@ -20,18 +20,6 @@ class Coordinate {
     return `${this.x},${this.y}`
   }
 
-  distanceTo(other:Coordinate) {
-    const xDist = Math.abs(this.x - other.x)
-    const yDist = Math.abs(this.y - other.y)
-
-    // Handle diagonals with a slope of 1
-    if (xDist === yDist) {
-      return xDist
-    }
-
-    return xDist + yDist
-  }
-
   stepInDirection(direction:string) {
     const distance = 1
     switch (direction) {
@@ -48,6 +36,18 @@ class Coordinate {
         this.x += distance
         break
     }
+  }
+
+  distanceTo(other:Coordinate) {
+    const xDist = Math.abs(this.x - other.x)
+    const yDist = Math.abs(this.y - other.y)
+
+    // Handle diagonals with a slope of 1
+    if (xDist === yDist) {
+      return xDist
+    }
+
+    return xDist + yDist
   }
 
   moveToward(other:Coordinate) {
