@@ -2,7 +2,6 @@
 
 import { getInputRowStream } from '../helpers/file.ts'
 import { getInputFileName } from '../helpers/args.ts'
-import { _ } from '../helpers/lodash.ts'
 
 //
 // Processing functions
