@@ -33,7 +33,8 @@ class Coordinate {
     return xDist + yDist
   }
 
-  moveBy(direction:string, distance:number) {
+  stepInDirection(direction:string) {
+    const distance = 1
     switch (direction) {
       case 'U':
         this.y += distance
@@ -93,7 +94,7 @@ for await (const [direction, distance] of instructionReader) {
     const originalHead = head.toString()
     const originalTail = tail.toString() // Should also be equal to tails[0].toString()
 
-    head.moveBy(direction, 1)
+    head.stepInDirection(direction)
     console.debug(`Head moved: ${originalHead} => ${head}\n`)
 
     // If the tail is within 1 space, don't move it
