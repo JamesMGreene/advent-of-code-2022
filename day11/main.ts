@@ -2,9 +2,10 @@ import { getInputSectionStream } from '../helpers/file.ts'
 import { getInputFileName } from '../helpers/args.ts'
 import { _ } from '../helpers/lodash.ts'
 
-const PART_NUMBER = 1
-const ROUND_COUNT = 20
-const RELIEF_FACTOR = 3
+const PART_NUMBER = 2
+const ROUND_COUNT = PART_NUMBER === 2 ? 10000 : 20
+const RELIEF_FACTOR = PART_NUMBER === 2 ? 1 : 3
+let highestWorryLevel = Number.MAX_SAFE_INTEGER
 
 //
 // Processing functions
@@ -46,11 +47,12 @@ class Monkey {
     const worryLevel = itemToWorryLevelMap.get(itemId!)
     const worryLevelAfterInspection = this._operation(worryLevel!)
     const worryLevelAfterRelief = Math.floor(worryLevelAfterInspection / RELIEF_FACTOR)
+    const worryLevelManualAdjustment = worryLevelAfterRelief % highestWorryLevel
 
     // Update the worry level tracker
-    itemToWorryLevelMap.set(itemId!, worryLevelAfterRelief)
+    itemToWorryLevelMap.set(itemId!, worryLevelManualAdjustment)
 
-    return worryLevelAfterRelief
+    return worryLevelManualAdjustment
   }
 
   // The monkey assesses your worry level about the item
@@ -123,12 +125,17 @@ for await (const monkeyRules:string[] of sectionReader) {
 }
 //console.debug(monkeys)
 
+// Roughly calculate your highest worry level increases as the least common multiple of all monkeys' test divisors
+if (PART_NUMBER === 2) {
+  highestWorryLevel = monkeys.reduce((acc:number, monkey:Monkey) => acc * monkey.testDivisor, 1)
+}
+
 // Run the rounds
 for (let i = 0; i < ROUND_COUNT; i++) {
   runRound()
 }
 
-//console.debug(monkeys.map(monkey => monkey.itemIds.map(itemId => itemToWorryLevelMap.get(itemId))))
+console.debug('Inspection counts: ', monkeys.map(monkey => monkey.inspectionCount))
 
 const mostActiveMonkeys = getMostActiveMonkeys(2)
 const monkeyBusiness = mostActiveMonkeys.reduce((acc:number, monkey:Monkey) => acc * monkey.inspectionCount, 1)
