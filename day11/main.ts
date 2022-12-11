@@ -2,6 +2,10 @@ import { getInputSectionStream } from '../helpers/file.ts'
 import { getInputFileName } from '../helpers/args.ts'
 import { _ } from '../helpers/lodash.ts'
 
+const PART_NUMBER = 1
+const ROUND_COUNT = 20
+const RELIEF_FACTOR = 3
+
 //
 // Processing functions
 //
@@ -41,7 +45,7 @@ class Monkey {
 
     const worryLevel = itemToWorryLevelMap.get(itemId!)
     const worryLevelAfterInspection = this._operation(worryLevel!)
-    const worryLevelAfterRelief = Math.floor(worryLevelAfterInspection / 3)
+    const worryLevelAfterRelief = Math.floor(worryLevelAfterInspection / RELIEF_FACTOR)
 
     // Update the worry level tracker
     itemToWorryLevelMap.set(itemId!, worryLevelAfterRelief)
@@ -117,18 +121,17 @@ for await (const monkeyRules:string[] of sectionReader) {
   // ⚠️ If there are a lot of lines, this could get slow as we already read them once creating the SectionReader
   monkeys.push(parseMonkeyRules(monkeyRules))
 }
-console.debug(monkeys)
+//console.debug(monkeys)
 
 // Run the rounds
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < ROUND_COUNT; i++) {
   runRound()
 }
 
-console.debug(monkeys.map(monkey => monkey.itemIds.map(itemId => itemToWorryLevelMap.get(itemId))))
+//console.debug(monkeys.map(monkey => monkey.itemIds.map(itemId => itemToWorryLevelMap.get(itemId))))
 
 const mostActiveMonkeys = getMostActiveMonkeys(2)
 const monkeyBusiness = mostActiveMonkeys.reduce((acc:number, monkey:Monkey) => acc * monkey.inspectionCount, 1)
 
 
-console.log('[pt1] Monkey business after 20 rounds: ' + monkeyBusiness)
-console.log('[pt2] ???: ' + 0)
+console.log(`[pt${PART_NUMBER}] Monkey business after ${ROUND_COUNT} rounds: ${monkeyBusiness}`)
