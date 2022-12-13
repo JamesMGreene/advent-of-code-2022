@@ -8,9 +8,7 @@ function compareIntsAscending(a: number, b: number): number {
   return a - b
 }
 
-interface CompositeList extends Array<any> {
-  [key: number]: number|CompositeList
-}
+type CompositeList = (number | CompositeList)[]
 
 function compareItems(a: CompositeList|number, b: CompositeList|number): number {
   const aIsNumber = typeof a === 'number'
