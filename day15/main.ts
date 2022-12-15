@@ -64,13 +64,10 @@ enum SpaceType {
 // Get a readable stream from the input file doesn't have to be fully loaded into memory
 const lineReader = await getInputLineStream(getInputFileName())
 
-let topRow = Number.MAX_SAFE_INTEGER       // top == 0
-let bottomRow = -1                         // bottom == height - 1
 let leftmostCol = Number.MAX_SAFE_INTEGER  // left == 0
 let rightmostCol = -1                      // right == width - 1
 
 const sensorsMap = new Map<string, Sensor>()
-const beaconsMap = new Map<string, Coordinate>()
 
 // Assess each row
 const SENSOR_REPORT_PARSER = /^Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$/
@@ -81,108 +78,91 @@ for await (const sensorReport of lineReader) {
     new Coordinate(beaconX, beaconY)
   )
 
-  // Side effect: update the bounds
   const distance = sensor.detectibleRange
+
+  // Side effect: update the bounds
   const minX = sensorX - distance
   const maxX = sensorX + distance
+  if (minX < leftmostCol) leftmostCol = minX
+  if (maxX > rightmostCol) rightmostCol = maxX
+
+  // Only store the sensor if its detectible range includes the target row
   const minY = sensorY - distance
   const maxY = sensorY + distance
-  if (minX < topRow) topRow = minX
-  if (maxX > bottomRow) bottomRow = maxX
-  if (minY < leftmostCol) leftmostCol = minY
-  if (maxY > rightmostCol) rightmostCol = maxY
-
-  // Store them... hopefully for some useful purpose
-  sensorsMap.set(sensor.location.toString(), sensor)
-  beaconsMap.set(sensor.nearestBeacon.toString(), sensor.nearestBeacon)
-}
-
-console.debug({ topRow, bottomRow, leftmostCol, rightmostCol })
-//console.debug(sensorsMap)
-
-const gridWidthPt1 = Math.abs(rightmostCol - leftmostCol) + 1
-const gridHeightPt1 = Math.abs(bottomRow - topRow) + 1
-const xOffsetPt1 = topRow
-const yOffsetPt1 = leftmostCol
-
-const targetX = TARGET_ROW_INDEX - xOffsetPt1
-
-console.debug({ gridWidthPt1, gridHeightPt1, xOffsetPt1, yOffsetPt1, targetX })
-
-// Create the overall map grid
-const undergroundMapPt1:SpaceType[][] = new Array(gridHeightPt1).fill(0).map(() => new Array(gridWidthPt1).fill(SpaceType.Air))
-
-const displayMap = function(undergroundMap:SpaceType[][]) {
-  return undergroundMap.map(
-    (row:SpaceType[], rowIndex) => `${(rowIndex  + xOffsetPt1).toString().padStart(3, ' ')} ${row.join('')}`
-  ).join('\n')
-}
-
-function addSensorRangeSpotToMap(x:number, y:number, undergroundMap:SpaceType[][]):void {
-  //console.debug({ type: SpaceType.SensorRange, x, y })
-
-  // Ignore out-of-bounds spots
-  // if (x < 0 || x >= gridWidthPt1 || y < 0 || y >= gridHeightPt1) {
-  //   console.debug({ warning: 'OUT_OF_BOUNDS', type: SpaceType.SensorRange, x, y, logicalX: x + xOffsetPt1, logicalY: y + yOffsetPt1, gridWidthPt1, gridHeightPt1 })
-  // }
-
-  const spaceType = undergroundMap[x][y]
-  if (spaceType === SpaceType.Air) {
-    undergroundMap[x][y] = SpaceType.SensorRange
+  if (minY <= TARGET_ROW_INDEX && TARGET_ROW_INDEX <= maxY) {
+    // Store them... hopefully for some useful purpose
+    sensorsMap.set(sensor.location.toString(), sensor)
   }
 }
 
-/*
-{ topRow: -8, bottomRow: 28, leftmostCol: -10, rightmostCol: 22 }
-{ gridWidthPt1: 33, gridHeightPt1: 37, xOffsetPt1: -8, yOffsetPt1: -10 }
-*/
-const addSensorToMap = function(sensor:Sensor, undergroundMap:SpaceType[][]):void {
+console.debug(sensorsMap)
+
+const gridWidthPt1 = rightmostCol - leftmostCol + 1
+const xOffsetPt1 = leftmostCol
+
+console.debug({ leftmostCol, rightmostCol, gridWidthPt1, xOffsetPt1 })
+
+// Create the target map row
+const targetRowMapPt1:SpaceType[] = new Array(gridWidthPt1).fill(SpaceType.Air)
+
+const displayRowMap = function(targetRowMap:SpaceType[]) {
+  return `${TARGET_ROW_INDEX} ${targetRowMap.join('')}`
+}
+
+function addSensorRangeSpotToMap(x:number, undergroundRowMap:SpaceType[]):void {
+  const spaceType = undergroundRowMap[x]
+  if (spaceType === SpaceType.Air) {
+    undergroundRowMap[x] = SpaceType.SensorRange
+  }
+}
+
+const addSensorToMap = function(sensor:Sensor, undergroundRowMap:SpaceType[]):void {
   // Add the sensor to the map
   const sensorX = sensor.location.x - xOffsetPt1
-  const sensorY = sensor.location.y - yOffsetPt1
-  //console.debug({ type: SpaceType.Sensor, x: sensor.location.x, y: sensor.location.y, sensorX, sensorY })
-  undergroundMap[sensorX][sensorY] = SpaceType.Sensor
+  const sensorY = sensor.location.y
+  if (sensorY === TARGET_ROW_INDEX) {
+    undergroundRowMap[sensorX] = SpaceType.Sensor
+  }
 
   // Add the beacon to the map
   const beaconX = sensor.nearestBeacon.x - xOffsetPt1
-  const beaconY = sensor.nearestBeacon.y - yOffsetPt1
-  //console.debug({ type: SpaceType.Beacon, x: sensor.nearestBeacon.x, y: sensor.nearestBeacon.y, beaconX, beaconY })
-  undergroundMap[beaconX][beaconY] = SpaceType.Beacon
+  const beaconY = sensor.nearestBeacon.y
+  if (beaconY === TARGET_ROW_INDEX) {
+    undergroundRowMap[beaconX] = SpaceType.Beacon
+  }
 
   // Add the sensor's range to the map
   const distance = sensor.detectibleRange
-  for (let x = distance; x >= 0; x--) {
-    for (let y = distance - x; y >= 0; y--) {
-      addSensorRangeSpotToMap(sensorX + x, sensorY + y, undergroundMap)
-      addSensorRangeSpotToMap(sensorX + x, sensorY - y, undergroundMap)
-      addSensorRangeSpotToMap(sensorX - x, sensorY + y, undergroundMap)
-      addSensorRangeSpotToMap(sensorX - x, sensorY - y, undergroundMap)
-    }
+  const distanceFromSensorToTargetRow = Math.abs(sensorY - TARGET_ROW_INDEX)
+  const rangeForX = distance - distanceFromSensorToTargetRow
+
+  console.debug({ sensorX, sensorY, distance, distanceFromSensorToTargetRow, rangeForX })
+
+  for (let x = rangeForX; x >= 0; x--) {
+    addSensorRangeSpotToMap(sensorX + x, undergroundRowMap)
+    addSensorRangeSpotToMap(sensorX - x, undergroundRowMap)
   }
 }
 
-//console.debug(displayMap(undergroundMapPt1) + '\n')
-//console.debug(displayMap(undergroundMapPt2) + '\n')
+//console.debug(displayRowMap(targetRowMapPt1) + '\n')
+//console.debug(displayRowMap(undergroundMapPt2) + '\n')
 
 // Add the sensors and known beacons to the map
 for (const sensor of sensorsMap.values()) {
   //console.debug(sensor.toString())
-  addSensorToMap(sensor, undergroundMapPt1)
-  //console.debug(displayMap(undergroundMapPt1) + '\n')
+  addSensorToMap(sensor, targetRowMapPt1)
+  //console.debug(displayRowMap(targetRowMapPt1) + '\n')
   //await new Promise(resolve => setTimeout(resolve, 500))
 }
 
-console.debug(displayMap(undergroundMapPt1) + '\n')
-// console.debug(displayMap(undergroundMapPt2) + '\n')
+//console.debug('Row:\n' + displayRowMap(targetRowMapPt1) + '\n')
 
-//const targetX = TARGET_ROW_INDEX - xOffsetPt1
-const targetRow = undergroundMapPt1[targetX]
-// ⬜⬜⬜⬜⬜⬜⬜⬜✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨🚨✨✨✨🟡✨✨
-//console.debug(targetRow.join(''))
-const unbeaconableSpots = targetRow.filter((spaceType:SpaceType) => [SpaceType.Sensor, SpaceType.SensorRange].includes(spaceType))
-// ✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨🟡✨✨
-//console.debug(unbeaconableSpots.join(''))
-const unbeaconablePositionsPt1 = unbeaconableSpots.length
+// console.debug(displayRowMap(undergroundMapPt2) + '\n')
 
-console.log(`[pt1] Un-beacon-able positions within row ${TARGET_ROW_INDEX}: ${unbeaconablePositionsPt1}`)
+const unbeaconableSpotsCount = targetRowMapPt1.reduce(
+  (acc, spaceType:SpaceType) => acc + ([SpaceType.Sensor, SpaceType.SensorRange].includes(spaceType) ? 1 : 0),
+  0
+)
+
+console.log(`[pt1] Un-beacon-able positions within row ${TARGET_ROW_INDEX}: ${unbeaconableSpotsCount}`)
 console.log('[pt2] ???: ' + 0)
