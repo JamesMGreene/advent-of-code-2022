@@ -5,6 +5,7 @@ import { usingSampleData, getInputFileName } from '../helpers/args.ts'
 
 // Constants
 const TARGET_ROW_INDEX = usingSampleData() ? 10 : 2000000
+const TUNING_FREQUENCY_MULTIPLIER = 4000000
 
 //
 // Processing functions
@@ -107,6 +108,10 @@ const targetRowMapPt1:SpaceType[] = new Array(gridWidthPt1).fill(SpaceType.Air)
 
 const displayRowMap = function(targetRowMap:SpaceType[]) {
   return `${TARGET_ROW_INDEX} ${targetRowMap.join('')}`
+}
+
+function getTuningFrequency(beacon:Coordinate):number {
+  return (beacon.x * TUNING_FREQUENCY_MULTIPLIER) + beacon.y
 }
 
 function addSensorRangeSpotToMap(x:number, undergroundRowMap:SpaceType[]):void {
