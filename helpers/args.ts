@@ -1,4 +1,7 @@
+export function usingSampleData(): boolean {
+  return ['-s', '--sample'].includes(Deno.args[0])
+}
+
 export function getInputFileName(): string {
-  const useSampleData = ['-s', '--sample'].includes(Deno.args[0])
-  return useSampleData ? 'sample.txt' : 'input.txt'
+  return usingSampleData() ? 'sample.txt' : 'input.txt'
 }
